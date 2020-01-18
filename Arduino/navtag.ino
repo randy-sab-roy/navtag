@@ -1,9 +1,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <ArduinoOTA.h>
 
-#define NUM_LEDS 24
+#define NUM_LEDS 6
 #define DATA_PIN 14
 #define GROUND_PIN 15
 #define GROUND2_PIN 12
@@ -14,6 +13,7 @@
 #define HOSTNAME "WeMos"
 
 Adafruit_NeoPixel pixels(NUM_LEDS, DATA_PIN, NEO_GRB | NEO_KHZ800);
+WiFiServer server(80);
 
 const uint32_t GREEN = pixels.Color(0, 255, 0);
 const uint32_t RED = pixels.Color(255, 0, 0);
@@ -24,7 +24,7 @@ const uint32_t WHITE = pixels.Color(255, 255, 255);
 void lightAllLeds(uint32_t color)
 {
     pixels.clear();
-    for(int i = 0; i < NUM_LEDS; i++)
+    for (int i = 0; i < NUM_LEDS; i++)
     {
         pixels.setPixelColor(i, color);
     }
@@ -56,47 +56,19 @@ void setupLed()
 void setupWifi()
 {
     Serial.println("");
-	Serial.print("Connecting to ");
-	Serial.print(WIFI_SSID);
-	WiFi.hostname(HOSTNAME);
-	WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.print(".");
-	}
-	Serial.println("");
-	Serial.print("WiFi connected with address ");
-	Serial.println(WiFi.localIP());
-}
-
-void setupOTA()
-{
-    ArduinoOTA.setHostname(HOSTNAME);
-
-    ArduinoOTA.onStart([]() {
-        pixels.clear();
-        pixels.show();
-    });
-
-    ArduinoOTA.onEnd([]() {
-        pixels.clear();
-        pixels.show();
-    });
-
-    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-        pixels.clear();
-        for(int i = 0; i < NUM_LEDS * progress / total; i++)
-        {
-            pixels.setPixelColor(i, BLUE);
-        }
-        pixels.show();
-    });
-
-    ArduinoOTA.onError([](ota_error_t error) {
-        lightAllLeds(RED);
-    });
-    ArduinoOTA.begin();
+    Serial.print("Connecting to ");
+    Serial.print(WIFI_SSID);
+    WiFi.mode(WIFI_STA);
+    WiFi.hostname(HOSTNAME);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.print("WiFi connected with address ");
+    Serial.println(WiFi.localIP());
 }
 
 void setup()
@@ -110,24 +82,35 @@ void setup()
 
     // WiFi connection
     setupWifi();
-    setupOTA();
 
     // Setup server
-    // server.begin();
+    server.begin();
+
+    lightAllLeds(GREEN);
 }
 
 void loop()
 {
-    pixels.setPixelColor(0, GREEN);
-    pixels.setPixelColor(1, GREEN);
-    pixels.setPixelColor(2, GREEN);
-    pixels.setPixelColor(3, GREEN);
-    pixels.show();
-    delay(1000);
-    pixels.setPixelColor(0, RED);
-    pixels.setPixelColor(1, RED);
-    pixels.setPixelColor(2, RED);
-    pixels.setPixelColor(3, RED);
-    pixels.show();
-    delay(1000);
+    WiFiClient client = server.available();
+
+    if (client)
+    {
+        Serial.println("Client connected");
+        while (client.connected())
+        {
+            while (client.available() > 0)
+            {
+                String line = client.readStringUntil('e');
+                Serial.println(line);
+                client.flush();
+                client.print("Ok");
+                lightAllLeds(random(100) > 50 ? RED : BLUE);
+            }
+
+            delay(10);
+        }
+
+        client.stop();
+        Serial.println("Client disconnected");
+    }
 }
