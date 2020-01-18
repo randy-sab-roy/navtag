@@ -8,9 +8,12 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.view.get
 import com.glados.navtag.R
+import com.glados.navtag.core.BlinkRate
+import com.glados.navtag.core.SafetyLight
+import com.glados.navtag.core.SafetyLightPreset
 import kotlinx.android.synthetic.main.activity_safety_light.*
 
-class SafetyLightActivity : AppCompatActivity(){
+class SafetyLightActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,8 +24,17 @@ class SafetyLightActivity : AppCompatActivity(){
     override fun onStart() {
         super.onStart()
         saveButton.setOnClickListener {
-            Toast.makeText(this, spinner.selectedItem.toString(),Toast.LENGTH_SHORT).show()
-            super.onBackPressed()
+            if (name.text.toString().isNotEmpty()) {
+                SafetyLight.addElement(
+                    SafetyLightPreset(
+                        name.text.toString(),
+                        BlinkRate.valueOf(spinner.selectedItem.toString())
+                    )
+                )
+                super.onBackPressed()
+            } else {
+                name.error = "Preset name can't be empty"
+            }
         }
         ArrayAdapter.createFromResource(
             this,
