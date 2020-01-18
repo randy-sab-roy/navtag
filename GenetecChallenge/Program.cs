@@ -114,6 +114,7 @@ namespace GenetecChallenge
 
         private static async Task ProcessMessagesAsync2(Message message, CancellationToken token)
         {
+            var body = Encoding.UTF8.GetString(message.Body);
             await UpdateWantedList();
 
             Console.Write("New wanted list : " + wantedList.Aggregate("", (acc, wanted) => acc + "," + wanted));
