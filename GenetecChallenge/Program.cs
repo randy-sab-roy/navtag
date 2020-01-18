@@ -11,6 +11,7 @@ using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.IO;
+using System.Collections.Generic;
 
 namespace GenetecChallenge
 {
@@ -85,19 +86,24 @@ namespace GenetecChallenge
             var body = Encoding.UTF8.GetString(message.Body);
             var bodyParsed = JsonSerializer.Deserialize<Body>(body);
 
-            if (wantedList.Contains(bodyParsed.LicensePlate))
+            if (IsWanted(bodyParsed.LicensePlate))
             {
                 string localPath = "./data/";
                 string fileName = "image" + Guid.NewGuid().ToString() + ".jpg";
                 string localFilePath = Path.Combine(localPath, fileName);
                 await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
                 var blobClient = containerClient.GetBlobClient(fileName);
-                Console.WriteLine("Uploading to Blob storage as blob:\n\t {0}\n", blobClient.Uri);
                 using FileStream uploadFileStream = File.OpenRead(localFilePath);
                 var info = await blobClient.UploadAsync(uploadFileStream);
                 uploadFileStream.Close();
 
                 await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
+
+                Console.WriteLine("WANTED : " + bodyParsed.LicensePlate);
+            }
+            else
+            {
+                Console.WriteLine("Not wanted : " + bodyParsed.LicensePlate);
             }
 
             await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
@@ -106,6 +112,8 @@ namespace GenetecChallenge
         private static async Task ProcessMessagesAsync2(Message message, CancellationToken token)
         {
             await UpdateWantedList();
+
+            Console.Write("New wanted list : " + wantedList.Aggregate("", (acc, wanted) => acc + "," + wanted));
 
             if (token.CanBeCanceled)
                 await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
@@ -134,13 +142,21 @@ namespace GenetecChallenge
 
         private static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
         {
+            Console.WriteLine("------------------------------------------------------------------------------");
             Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
             var context = exceptionReceivedEventArgs.ExceptionReceivedContext;
             Console.WriteLine("Exception context for troubleshooting:");
             Console.WriteLine($"- Endpoint: {context.Endpoint}");
             Console.WriteLine($"- Entity Path: {context.EntityPath}");
             Console.WriteLine($"- Executing Action: {context.Action}");
+            Console.WriteLine("------------------------------------------------------------------------------");
             return Task.CompletedTask;
+        }
+
+        private static bool IsWanted(string plate)
+        {
+            var wantedStrings = wantedList.Select(s => new WantedString(s));
+            return wantedStrings.Any(w => w.Equals(plate));
         }
     }
 }
