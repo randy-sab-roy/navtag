@@ -86,8 +86,10 @@ namespace GenetecChallenge
             var body = Encoding.UTF8.GetString(message.Body);
             var bodyParsed = JsonSerializer.Deserialize<Body>(body);
 
-            if (IsWanted(bodyParsed.LicensePlate))
+            if (IsWanted(bodyParsed.LicensePlate, out var wantedPlate))
             {
+                bodyParsed.LicensePlate = wantedPlate;
+
                 string localPath = "./data/";
                 string fileName = "image" + Guid.NewGuid().ToString() + ".jpg";
                 string localFilePath = Path.Combine(localPath, fileName);
@@ -97,6 +99,7 @@ namespace GenetecChallenge
                 var info = await blobClient.UploadAsync(uploadFileStream);
                 uploadFileStream.Close();
 
+                Console.WriteLine(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
                 await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
 
                 Console.WriteLine("WANTED : " + bodyParsed.LicensePlate);
@@ -128,7 +131,6 @@ namespace GenetecChallenge
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
                 .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();
         }
@@ -153,10 +155,19 @@ namespace GenetecChallenge
             return Task.CompletedTask;
         }
 
-        private static bool IsWanted(string plate)
+        private static bool IsWanted(string plate, out string wantedPlate)
         {
             var wantedStrings = wantedList.Select(s => new WantedString(s));
-            return wantedStrings.Any(w => w.Equals(plate));
+            foreach(var w in wantedStrings)
+            {
+                if (w.Equals(plate))
+                {
+                    wantedPlate = w.Plate;
+                    return true;
+                }
+            }
+            wantedPlate = "";
+            return false;
         }
     }
 }
