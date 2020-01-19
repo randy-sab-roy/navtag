@@ -27,7 +27,7 @@ void lightAllLeds(uint32_t color)
 
 void processInput()
 {
-	String req = Serial.readStringUntil('e');
+	String req = Serial.readString();
 
     for(int i = 0; (i < req.length()) && (i < NUM_LEDS); i++)
     {
@@ -112,4 +112,5 @@ void loop()
     }
 
     updateColors();
+    delay(10);
 }
