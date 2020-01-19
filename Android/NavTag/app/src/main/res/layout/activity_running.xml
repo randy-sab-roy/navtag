@@ -26,25 +26,39 @@
                 android:singleLine="true"
                 android:hint="Preset Name" />
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <EditText
+                    android:id="@+id/distance"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Blink Rate Selection : "
-                    android:paddingLeft="2dp"
-                    android:paddingRight="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="18sp"/>
+                    android:layout_marginBottom="4dp"
+                    android:singleLine="true"
+                    android:inputType="number"
+                    android:hint="Desired distance or time"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toLeftOf="@id/km"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
                 <Spinner
-                    android:id="@+id/spinner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                    android:id="@+id/km"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="km"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+            <EditText
+                android:id="@+id/speed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:singleLine="true"
+                android:hint="Desired Speed (km/h)" />
         </LinearLayout>
     </ScrollView>
 

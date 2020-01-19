@@ -155,8 +155,13 @@ class DestinationActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (event == null || !event.isShiftPressed) {
                     // the user is done typing.
                     mMap.clear()
-                    mMap.addMarker(MarkerOptions().position(getLocationFromAddress(addressField.text.toString())!!).title(addressField.text.toString()))
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getLocationFromAddress(addressField.text.toString()), 16f))
+                    val latlng = getLocationFromAddress(addressField.text.toString())
+                    if (latlng == null){
+                        addressField.error = "Address Field can't be empty"
+                    } else {
+                        mMap.addMarker(MarkerOptions().position(latlng).title(addressField.text.toString()))
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getLocationFromAddress(addressField.text.toString()), 16f))
+                    }
                     true // consume.
                 }
             }
