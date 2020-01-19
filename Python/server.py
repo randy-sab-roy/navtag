@@ -17,14 +17,14 @@ class MyHandler(BaseHTTPRequestHandler):
             ser.write(self.path[1:])
         except serial.serialutil.SerialException:
             num = (num + 1) % 2
-            ser = serial.Serial('/dev/ttyUSB' + num, timeout=10)
+            ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
             self.executeCommand()
 
 try:
-    ser = serial.Serial('/dev/ttyUSB' + num, timeout=10)
+    ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
 except serial.serialutil.SerialException:
     num = (num + 1) % 2
-    ser = serial.Serial('/dev/ttyUSB' + num, timeout=10)
+    ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
 
 ser.baudrate = 115200
 httpd = SocketServer.TCPServer(("", 8080), MyHandler)
