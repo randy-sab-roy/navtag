@@ -1,4 +1,4 @@
-package com.glados.navtag.ui.safetylight
+package com.glados.navtag.ui.running
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,15 +9,15 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.glados.navtag.R
-import com.glados.navtag.core.SafetyLight
+import com.glados.navtag.core.RunningList
 import kotlinx.android.synthetic.main.fragment_widget.*
 import java.util.Observer
 
-class SafetyLightFragment : Fragment() {
+class RunningFragment : Fragment() {
 
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
 
-    private val safetyLightObserver = Observer { _, _ ->
+    private val commuteObserver = Observer { _, _ ->
         if (viewAdapter.itemCount == 0) {
             instructions.visibility = View.VISIBLE
         } else {
@@ -35,21 +35,21 @@ class SafetyLightFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         presetRecyclerView.layoutManager = LinearLayoutManager(context)
-        viewAdapter = SafetyLightAdapter(SafetyLight.getValue())
+        viewAdapter = RunningAdapter(RunningList.getValue())
         presetRecyclerView.adapter = viewAdapter
     }
 
     override fun onStart() {
         fab.setOnClickListener {
-            startActivity(Intent(context, SafetyLightActivity::class.java))
+            startActivity(Intent(context, RunningActivity::class.java))
         }
-        SafetyLight.addObserver(safetyLightObserver)
-        SafetyLight.reload()
+        RunningList.addObserver(commuteObserver)
+        RunningList.reload()
         super.onStart()
     }
 
     override fun onStop() {
-        SafetyLight.deleteObserver(safetyLightObserver)
+        RunningList.deleteObserver(commuteObserver)
         super.onStop()
     }
 }

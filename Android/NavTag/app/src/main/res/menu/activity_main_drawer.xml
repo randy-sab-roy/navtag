@@ -8,14 +8,10 @@
             android:id="@+id/nav_home"
             android:icon="@drawable/ic_menu_navtag"
             android:title="@string/menu_navtag" />
-<!--        <item-->
-<!--            android:id="@+id/nav_slideshow"-->
-<!--            android:icon="@drawable/ic_menu_slideshow"-->
-<!--            android:title="@string/menu_slideshow" />-->
-<!--        <item-->
-<!--            android:id="@+id/nav_tools"-->
-<!--            android:icon="@drawable/ic_menu_manage"-->
-<!--            android:title="@string/menu_tools" />-->
+        <!--        <item-->
+        <!--            android:id="@+id/nav_tools"-->
+        <!--            android:icon="@drawable/ic_menu_manage"-->
+        <!--            android:title="@string/menu_tools" />-->
     </group>
 
     <item android:title="@string/menu_section">
@@ -28,10 +24,14 @@
                 android:id="@+id/nav_send"
                 android:icon="@android:drawable/ic_dialog_map"
                 android:title="@string/menu_destination" />
-<!--            <item-->
-<!--                android:id="@+id/nav_share"-->
-<!--                android:icon="@drawable/ic_menu_share"-->
-<!--                android:title="@string/menu_share" />-->
+            <item
+                android:id="@+id/nav_share"
+                android:icon="@drawable/ic_bus"
+                android:title="@string/menu_commute" />
+            <item
+                android:id="@+id/nav_slideshow"
+                android:icon="@drawable/ic_running"
+                android:title="@string/menu_running" />
         </menu>
     </item>
 

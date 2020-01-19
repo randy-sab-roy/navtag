@@ -40,7 +40,6 @@ class DestinationFragment : Fragment() {
     }
 
     override fun onStart() {
-        instructions.text = "To add a preset, press the button below"
         fab.setOnClickListener {
             startActivity(Intent(context, DestinationActivity::class.java))
         }

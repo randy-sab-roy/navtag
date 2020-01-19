@@ -10,9 +10,9 @@
     <string name="menu_navtag">NavTag</string>
     <string name="menu_section">Widgets</string>
     <string name="menu_safety_light">Safety Light</string>
-    <string name="menu_slideshow">Slideshow</string>
+    <string name="menu_running">Running</string>
     <string name="menu_tools">Tools</string>
-    <string name="menu_share">Share</string>
+    <string name="menu_commute">Commute</string>
     <string name="menu_destination">Destination</string>
     <string-array name="spinnerstuff">
         <item>Still</item>
