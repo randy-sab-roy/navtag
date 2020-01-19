@@ -23,7 +23,7 @@ class NavTagPresetView @JvmOverloads constructor(context: Context, attrs: Attrib
             NavTagList.removeElement(preset)
         }
         name.setOnClickListener {
-            Communication.applyMode(preset.mode)
+            Communication.applyMode(preset.mode, preset.blinkRate)
         }
         uploadButton.visibility = View.GONE
     }

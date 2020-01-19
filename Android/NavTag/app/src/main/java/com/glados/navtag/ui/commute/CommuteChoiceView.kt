@@ -20,7 +20,7 @@ class CommuteChoiceView @JvmOverloads constructor(context: Context, attrs: Attri
             CommuteList.removeElement(preset)
         }
         uploadButton.setOnClickListener {
-            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Commute))
+            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Commute, null))
         }
     }
 
