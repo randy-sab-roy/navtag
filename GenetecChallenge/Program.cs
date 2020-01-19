@@ -12,6 +12,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.IO;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace GenetecChallenge
 {
@@ -41,6 +42,8 @@ namespace GenetecChallenge
         private static string[] wantedList;
 
         private static BlobContainerClient containerClient;
+
+        private static readonly SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider();
 
         public static async Task Main(string[] args)
         {
@@ -87,81 +90,96 @@ namespace GenetecChallenge
 
         private static async Task ProcessMessagesAsync(Message message, CancellationToken token)
         {
-            Console.WriteLine();
-            Console.WriteLine("------------------------------------------");
-            Console.WriteLine();
-
-            var body = Encoding.UTF8.GetString(message.Body);
-            var bodyParsed = JsonSerializer.Deserialize<Body>(body);
-
-            var localPath = "./data/";
-            var guid = "image" + Guid.NewGuid().ToString();
-            var fileName = guid + ".jpg";
-            var localFilePath = Path.Combine(localPath, fileName);
-            await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
-            var blobClient = containerClient.GetBlobClient(fileName);
-            using FileStream uploadFileStream = File.OpenRead(localFilePath);
-            var info = await blobClient.UploadAsync(uploadFileStream);
-            uploadFileStream.Close();
-
-            if (IsWanted(bodyParsed.LicensePlate, out var wantedPlate))
+            try
             {
-                bodyParsed.LicensePlate = wantedPlate;
+                Console.WriteLine();
+                Console.WriteLine("------------------------------------------");
+                Console.WriteLine();
 
-                await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
+                var body = Encoding.UTF8.GetString(message.Body);
+                var bodyParsed = JsonSerializer.Deserialize<Body>(body);
 
-                Console.WriteLine("WANTED 1 : " + bodyParsed.LicensePlate);
-            }
-            else
-            {
-                // POST
-                using var request = new HttpRequestMessage(HttpMethod.Post, "https://hackatown.cognitiveservices.azure.com/vision/v2.0/recognizeText?mode=Printed");
-                using var stringContent = new StringContent($"{{\"url\" : \"{blobClient.Uri.ToString()}\"}}", Encoding.UTF8, "application/json");
-                request.Content = stringContent;
+                // Context image
+                var localPath = "./data/";
+                var guid = Guid.NewGuid().ToString();
+                var fileName = guid + ".jpg";
+                var localFilePath = Path.Combine(localPath, fileName);
+                await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
+                var blobClient = containerClient.GetBlobClient(fileName);
+                using FileStream uploadFileStream = File.OpenRead(localFilePath);
+                var info = await blobClient.UploadAsync(uploadFileStream);
+                uploadFileStream.Close();
 
-                using var responsePost = await client3
-                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
-                    .ConfigureAwait(false);
+                // Real image
+                var localPath2 = "./data2/";
+                var guid2 = Guid.NewGuid().ToString();
+                var fileName2 = guid2 + ".jpg";
+                var localFilePath2 = Path.Combine(localPath2, fileName2);
+                await File.WriteAllBytesAsync(localFilePath2, bodyParsed.LicensePlateImageJpg);
+                var blobClient2 = containerClient.GetBlobClient(fileName2);
+                using FileStream uploadFileStream2 = File.OpenRead(localFilePath2);
+                var info2 = await blobClient2.UploadAsync(uploadFileStream2);
+                uploadFileStream2.Close();
 
-                var location = responsePost.Headers.GetValues("Operation-Location").First();
-
-                // GET
-                VisionResult result;
-                do
+                if (IsWanted(bodyParsed.LicensePlate, out var wantedPlate))
                 {
-                    var response = await client4.GetStringAsync(location);
-                    result = JsonSerializer.Deserialize<VisionResult>(response);
-                } while (result.status != "Succeeded");
+                    bodyParsed.LicensePlate = wantedPlate;
 
-                bool found = false;
-                foreach (var line in result.recognitionResult.lines)
+                    await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
+
+                    Console.WriteLine("WANTED 1 : " + bodyParsed.LicensePlate);
+                }
+                else
                 {
-                    var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "").Replace(":", "").Replace("=", "");
-                    if (IsWanted(trimed, out var wantedPlate2))
+                    // POST
+                    using var request = new HttpRequestMessage(HttpMethod.Post, "https://hackatown.cognitiveservices.azure.com/vision/v2.0/recognizeText?mode=Printed");
+                    using var stringContent = new StringContent($"{{\"url\" : \"{blobClient2.Uri.ToString()}\"}}", Encoding.UTF8, "application/json");
+                    request.Content = stringContent;
+
+                    using var responsePost = await client3
+                        .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
+                        .ConfigureAwait(false);
+
+                    Console.WriteLine("PATATE : " + responsePost.StatusCode);
+                    Console.WriteLine("PATATE2 : " + await responsePost.Content.ReadAsStringAsync());
+                    var location = responsePost.Headers.GetValues("Operation-Location").First();
+
+                    // GET
+                    VisionResult result;
+                    do
                     {
-                        found = true;
+                        var response = await client4.GetStringAsync(location);
+                        result = JsonSerializer.Deserialize<VisionResult>(response);
+                    } while (result.status != "Succeeded");
 
-                        bodyParsed.LicensePlate = wantedPlate2;
-
-                        await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
-
-                        Console.WriteLine("\nWANTED 2 : " + bodyParsed.LicensePlate);
-
-                        break;
-                    }
-                    else
+                    bool found = false;
+                    foreach (var line in result.recognitionResult.lines)
                     {
-                        Console.Write(trimed + "     ");
+                        var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "").Replace(":", "").Replace("=", "");
+                        if (IsWanted(trimed, out var wantedPlate2))
+                        {
+                            found = true;
+
+                            bodyParsed.LicensePlate = wantedPlate2;
+
+                            await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
+
+                            Console.WriteLine("\n**************** WANTED 2 **************** : " + bodyParsed.LicensePlate);
+
+                            break;
+                        }
+                        else
+                        {
+                            Console.Write(trimed + "     ");
+                        }
                     }
+
+                    if (!found)
+                        Console.WriteLine("\nNot wanted : " + bodyParsed.LicensePlate);
                 }
 
-                if (!found)
-                {
-                    Console.WriteLine("\nNot wanted : " + bodyParsed.LicensePlate);
-                    var localFilePath2 = Path.Combine(localPath, guid + ".txt");
-                    await File.WriteAllLinesAsync(localFilePath2, result.recognitionResult.lines.Select(s => s.text));
-                }
             }
+            catch (InvalidOperationException) { }
 
             await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
         }
