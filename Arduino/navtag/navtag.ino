@@ -10,6 +10,9 @@ const uint32_t BLACK = pixels.Color(0, 0, 0);
 const uint32_t RED = pixels.Color(255, 0, 0);
 const uint32_t GREEN = pixels.Color(0, 255, 0);
 const uint32_t BLUE = pixels.Color(0, 0, 255);
+const uint32_t PURPLE = pixels.Color(255, 0, 255);
+const uint32_t YELLOW = pixels.Color(255, 255, 0);
+const uint32_t BROWN_PURPLE = pixels.Color(0, 255, 255);
 const uint32_t WHITE = pixels.Color(255, 255, 255);
 
 uint32_t colors[NUM_LEDS];
@@ -46,6 +49,15 @@ void processInput()
                 colors[i] = BLUE;
                 break;
             case '4':
+                colors[i] = PURPLE;
+                break;
+            case '5':
+                colors[i] = YELLOW;
+                break;
+            case '6':
+                colors[i] = BROWN_PURPLE;
+                break;
+            case '7':
                 colors[i] = WHITE;
                 break;
             default:
