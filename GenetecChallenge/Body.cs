@@ -9,6 +9,7 @@ namespace GenetecChallenge
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public byte[] ContextImageJpg { get; set; }
+        public byte[] LicensePlateImageJpg { get; set; }
 
         public BodySend ToBodySend(string contextImageReference)
         {
