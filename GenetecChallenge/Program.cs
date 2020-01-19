@@ -94,9 +94,10 @@ namespace GenetecChallenge
             var body = Encoding.UTF8.GetString(message.Body);
             var bodyParsed = JsonSerializer.Deserialize<Body>(body);
 
-            string localPath = "./data/";
-            string fileName = "image" + Guid.NewGuid().ToString() + ".jpg";
-            string localFilePath = Path.Combine(localPath, fileName);
+            var localPath = "./data/";
+            var guid = "image" + Guid.NewGuid().ToString();
+            var fileName = guid + ".jpg";
+            var localFilePath = Path.Combine(localPath, fileName);
             await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
             var blobClient = containerClient.GetBlobClient(fileName);
             using FileStream uploadFileStream = File.OpenRead(localFilePath);
@@ -133,9 +134,9 @@ namespace GenetecChallenge
                 } while (result.status != "Succeeded");
 
                 bool found = false;
-                foreach(var line in result.recognitionResult.lines)
+                foreach (var line in result.recognitionResult.lines)
                 {
-                    var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "");
+                    var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "").Replace(":", "").Replace("=", "");
                     if (IsWanted(trimed, out var wantedPlate2))
                     {
                         found = true;
@@ -154,8 +155,12 @@ namespace GenetecChallenge
                     }
                 }
 
-                if(!found)
+                if (!found)
+                {
                     Console.WriteLine("\nNot wanted : " + bodyParsed.LicensePlate);
+                    var localFilePath2 = Path.Combine(localPath, guid + ".txt");
+                    await File.WriteAllLinesAsync(localFilePath2, result.recognitionResult.lines.Select(s => s.text));
+                }
             }
 
             await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
@@ -164,12 +169,10 @@ namespace GenetecChallenge
         private static async Task ProcessMessagesAsync2(Message message, CancellationToken token)
         {
             var body = Encoding.UTF8.GetString(message.Body);
-            await UpdateWantedList();
+            var bodyParsed = JsonSerializer.Deserialize<Body2>(body);
 
-            Console.Write("New wanted list : " + wantedList.Aggregate("", (acc, wanted) => acc + "," + wanted));
-
-            if (token.CanBeCanceled)
-                await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
+            if (bodyParsed.TotalWantedCount > wantedList.Length)
+                await UpdateWantedList();
         }
 
         private static async Task<string> PostBasicAsync(string message)
