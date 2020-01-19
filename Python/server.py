@@ -20,6 +20,8 @@ class MyHandler(BaseHTTPRequestHandler):
         time.sleep(1)
     
     def executeCommand(self):
+        global ser
+        global num
         try:
             ser.write(self.path[1:])
         except serial.serialutil.SerialException:
