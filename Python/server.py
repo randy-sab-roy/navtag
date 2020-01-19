@@ -6,6 +6,13 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 
 num = 0
 
+try:
+    ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
+except serial.serialutil.SerialException:
+    num = (num + 1) % 2
+    ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
+ser.baudrate = 115200
+
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -20,13 +27,6 @@ class MyHandler(BaseHTTPRequestHandler):
             ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
             self.executeCommand()
 
-try:
-    ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
-except serial.serialutil.SerialException:
-    num = (num + 1) % 2
-    ser = serial.Serial('/dev/ttyUSB' + str(num), timeout=10)
-
-ser.baudrate = 115200
 httpd = SocketServer.TCPServer(("", 8080), MyHandler)
 try:
     httpd.serve_forever()
