@@ -13,6 +13,7 @@ using Azure.Storage.Blobs.Models;
 using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using PhotoSauce.MagicScaler;
 
 namespace GenetecChallenge
 {
@@ -114,10 +115,17 @@ namespace GenetecChallenge
                 var localPath2 = "./data2/";
                 var guid2 = Guid.NewGuid().ToString();
                 var fileName2 = guid2 + ".jpg";
+                var fileName3 = "Resized" + guid2 + ".jpg";
                 var localFilePath2 = Path.Combine(localPath2, fileName2);
+                var localFilePath3 = Path.Combine(localPath2, fileName3);
                 await File.WriteAllBytesAsync(localFilePath2, bodyParsed.LicensePlateImageJpg);
+                // Resize
+                var settings = new ProcessImageSettings { Width = 200 };
+                using var outStream = new FileStream(localFilePath3, FileMode.Create);
+                MagicImageProcessor.ProcessImage(localFilePath2, outStream, settings);
                 var blobClient2 = containerClient.GetBlobClient(fileName2);
-                using FileStream uploadFileStream2 = File.OpenRead(localFilePath2);
+                outStream.Close();
+                using FileStream uploadFileStream2 = File.OpenRead(localFilePath3);
                 var info2 = await blobClient2.UploadAsync(uploadFileStream2);
                 uploadFileStream2.Close();
 
