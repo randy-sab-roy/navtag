@@ -13,7 +13,7 @@
     <string name="menu_slideshow">Slideshow</string>
     <string name="menu_tools">Tools</string>
     <string name="menu_share">Share</string>
-    <string name="menu_send">Send</string>
+    <string name="menu_destination">Destination</string>
     <string-array name="spinnerstuff">
         <item>Still</item>
         <item>Slow</item>
@@ -22,4 +22,5 @@
         <item>Freedom</item>
         <item>Rainbow</item>
     </string-array>
+    <string name="title_activity_destination">Map</string>
 </resources>
