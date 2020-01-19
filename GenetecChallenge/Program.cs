@@ -35,6 +35,8 @@ namespace GenetecChallenge
 
         private static readonly HttpClient client = new HttpClient();
         private static readonly HttpClient client2 = new HttpClient();
+        private static readonly HttpClient client3 = new HttpClient();
+        private static readonly HttpClient client4 = new HttpClient();
 
         private static string[] wantedList;
 
@@ -44,6 +46,8 @@ namespace GenetecChallenge
         {
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "ZXF1aXBlMDI6czdaVjlTWjNNQmRkYTZ4SA==");
             client2.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", "ZXF1aXBlMDI6czdaVjlTWjNNQmRkYTZ4SA==");
+            client3.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "c2caa137d6c549b4b29b0214528105ed");
+            client4.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "c2caa137d6c549b4b29b0214528105ed");
 
             if (File.Exists(WantedFile))
                 wantedList = File.ReadAllLines(WantedFile);
@@ -83,27 +87,80 @@ namespace GenetecChallenge
 
         private static async Task ProcessMessagesAsync(Message message, CancellationToken token)
         {
+            Console.WriteLine();
+            Console.WriteLine("------------------------------------------");
+            Console.WriteLine();
+
             var body = Encoding.UTF8.GetString(message.Body);
             var bodyParsed = JsonSerializer.Deserialize<Body>(body);
 
-            if (IsWanted(bodyParsed.LicensePlate))
+            var localPath = "./data/";
+            var guid = "image" + Guid.NewGuid().ToString();
+            var fileName = guid + ".jpg";
+            var localFilePath = Path.Combine(localPath, fileName);
+            await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
+            var blobClient = containerClient.GetBlobClient(fileName);
+            using FileStream uploadFileStream = File.OpenRead(localFilePath);
+            var info = await blobClient.UploadAsync(uploadFileStream);
+            uploadFileStream.Close();
+
+            if (IsWanted(bodyParsed.LicensePlate, out var wantedPlate))
             {
-                string localPath = "./data/";
-                string fileName = "image" + Guid.NewGuid().ToString() + ".jpg";
-                string localFilePath = Path.Combine(localPath, fileName);
-                await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
-                var blobClient = containerClient.GetBlobClient(fileName);
-                using FileStream uploadFileStream = File.OpenRead(localFilePath);
-                var info = await blobClient.UploadAsync(uploadFileStream);
-                uploadFileStream.Close();
+                bodyParsed.LicensePlate = wantedPlate;
 
                 await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
 
-                Console.WriteLine("WANTED : " + bodyParsed.LicensePlate);
+                Console.WriteLine("WANTED 1 : " + bodyParsed.LicensePlate);
             }
             else
             {
-                Console.WriteLine("Not wanted : " + bodyParsed.LicensePlate);
+                // POST
+                using var request = new HttpRequestMessage(HttpMethod.Post, "https://hackatown.cognitiveservices.azure.com/vision/v2.0/recognizeText?mode=Printed");
+                using var stringContent = new StringContent($"{{\"url\" : \"{blobClient.Uri.ToString()}\"}}", Encoding.UTF8, "application/json");
+                request.Content = stringContent;
+
+                using var responsePost = await client3
+                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
+                    .ConfigureAwait(false);
+
+                var location = responsePost.Headers.GetValues("Operation-Location").First();
+
+                // GET
+                VisionResult result;
+                do
+                {
+                    var response = await client4.GetStringAsync(location);
+                    result = JsonSerializer.Deserialize<VisionResult>(response);
+                } while (result.status != "Succeeded");
+
+                bool found = false;
+                foreach (var line in result.recognitionResult.lines)
+                {
+                    var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "").Replace(":", "").Replace("=", "");
+                    if (IsWanted(trimed, out var wantedPlate2))
+                    {
+                        found = true;
+
+                        bodyParsed.LicensePlate = wantedPlate2;
+
+                        await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
+
+                        Console.WriteLine("\nWANTED 2 : " + bodyParsed.LicensePlate);
+
+                        break;
+                    }
+                    else
+                    {
+                        Console.Write(trimed + "     ");
+                    }
+                }
+
+                if (!found)
+                {
+                    Console.WriteLine("\nNot wanted : " + bodyParsed.LicensePlate);
+                    var localFilePath2 = Path.Combine(localPath, guid + ".txt");
+                    await File.WriteAllLinesAsync(localFilePath2, result.recognitionResult.lines.Select(s => s.text));
+                }
             }
 
             await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
@@ -111,12 +168,11 @@ namespace GenetecChallenge
 
         private static async Task ProcessMessagesAsync2(Message message, CancellationToken token)
         {
-            await UpdateWantedList();
+            var body = Encoding.UTF8.GetString(message.Body);
+            var bodyParsed = JsonSerializer.Deserialize<Body2>(body);
 
-            Console.Write("New wanted list : " + wantedList.Aggregate("", (acc, wanted) => acc + "," + wanted));
-
-            if (token.CanBeCanceled)
-                await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
+            if (bodyParsed.TotalWantedCount > wantedList.Length)
+                await UpdateWantedList();
         }
 
         private static async Task<string> PostBasicAsync(string message)
@@ -128,7 +184,6 @@ namespace GenetecChallenge
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
                 .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync();
         }
@@ -153,10 +208,19 @@ namespace GenetecChallenge
             return Task.CompletedTask;
         }
 
-        private static bool IsWanted(string plate)
+        private static bool IsWanted(string plate, out string wantedPlate)
         {
             var wantedStrings = wantedList.Select(s => new WantedString(s));
-            return wantedStrings.Any(w => w.Equals(plate));
+            foreach (var w in wantedStrings)
+            {
+                if (w.Equals(plate))
+                {
+                    wantedPlate = w.Plate;
+                    return true;
+                }
+            }
+            wantedPlate = "";
+            return false;
         }
     }
 }
