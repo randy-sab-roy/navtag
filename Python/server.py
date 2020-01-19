@@ -1,14 +1,19 @@
-import serial
-import http.server
-import socketserver
-
-PORT = 8080
-Handler = http.server.SimpleHTTPRequestHandler
-
-# ser = serial.Serial('/dev/ttyUSB0')
 # ser.write(b'hello')
 # ser.close()
 
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print("serving at port", PORT)
-    httpd.serve_forever()
+import SocketServer
+import serial
+from BaseHTTPServer import BaseHTTPRequestHandler
+
+ser = serial.Serial('/dev/ttyUSB0')
+ser.baudrate = 115200
+def some_function():
+    print "some_function got called"
+
+class MyHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+	ser.write(b'11111')
+        self.send_response(200)
+
+httpd = SocketServer.TCPServer(("", 8080), MyHandler)
+httpd.serve_forever()
