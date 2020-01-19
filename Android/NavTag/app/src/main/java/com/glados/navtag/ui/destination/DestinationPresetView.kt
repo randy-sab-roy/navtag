@@ -21,7 +21,7 @@ class DestinationPresetView @JvmOverloads constructor(context: Context, attrs: A
             DestinationList.removeElement(preset)
         }
         uploadButton.setOnClickListener {
-            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Destination))
+            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Destination, null))
         }
     }
 

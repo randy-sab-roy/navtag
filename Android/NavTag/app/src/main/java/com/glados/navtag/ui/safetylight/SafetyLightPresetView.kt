@@ -20,7 +20,7 @@ class SafetyLightPresetView @JvmOverloads constructor(context: Context, attrs: A
             SafetyLight.removeElement(preset)
         }
         uploadButton.setOnClickListener {
-            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.SafetyLight))
+            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.SafetyLight, preset.blinkRate))
         }
     }
 

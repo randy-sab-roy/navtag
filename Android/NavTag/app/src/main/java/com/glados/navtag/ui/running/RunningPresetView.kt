@@ -20,7 +20,7 @@ class RunningPresetView @JvmOverloads constructor(context: Context, attrs: Attri
             RunningList.removeElement(preset)
         }
         uploadButton.setOnClickListener {
-            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Running))
+            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Running, null))
         }
     }
 
