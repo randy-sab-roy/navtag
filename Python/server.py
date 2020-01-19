@@ -20,9 +20,13 @@ class MyHandler(BaseHTTPRequestHandler):
             ser = serial.Serial('/dev/ttyUSB' + num, timeout=10)
             self.executeCommand()
 
-ser = serial.Serial('/dev/ttyUSB0')
-ser.baudrate = 115200
+try:
+    ser = serial.Serial('/dev/ttyUSB' + num, timeout=10)
+except serial.serialutil.SerialException:
+    num = (num + 1) % 2
+    ser = serial.Serial('/dev/ttyUSB' + num, timeout=10)
 
+ser.baudrate = 115200
 httpd = SocketServer.TCPServer(("", 8080), MyHandler)
 try:
     httpd.serve_forever()
