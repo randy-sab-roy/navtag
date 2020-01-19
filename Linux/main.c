@@ -19,7 +19,8 @@ void route()
 
     ROUTE_POST("/")
     {
-        for (int i=0; i<payload_size; i++)
+	int i;
+        for (i=0; i<payload_size; i++)
           fprintf(file,"%c",*(payload+i));
 
         printf("HTTP/1.1 200 OK\r\n\r\n");
