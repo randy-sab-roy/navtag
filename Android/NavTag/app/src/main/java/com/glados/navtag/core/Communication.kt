@@ -28,7 +28,7 @@ object Communication {
     }
 
     private fun setDestination(){
-        Fuel.get(IP + "000404411000040000000000000000").responseString{ _, _, _ ->}
+        Fuel.get(IP + "000707777700070000000000000000").responseString{ _, _, _ ->}
     }
 
     private fun setCommute(){
