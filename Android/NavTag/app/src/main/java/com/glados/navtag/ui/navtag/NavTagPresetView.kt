@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.glados.navtag.R
+import com.glados.navtag.core.Communication
 import com.glados.navtag.core.NavTagList
 import com.glados.navtag.core.NavTagPreset
 import kotlinx.android.synthetic.main.item_preset.view.*
@@ -20,6 +21,9 @@ class NavTagPresetView @JvmOverloads constructor(context: Context, attrs: Attrib
         LayoutInflater.from(context).inflate(R.layout.item_preset, this, true)
         deleteButton.setOnClickListener {
             NavTagList.removeElement(preset)
+        }
+        name.setOnClickListener {
+            Communication.applyMode(preset.mode)
         }
         uploadButton.visibility = View.GONE
     }

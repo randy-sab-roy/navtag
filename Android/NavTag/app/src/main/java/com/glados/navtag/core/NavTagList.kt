@@ -25,7 +25,7 @@ object NavTagList : Observable() {
     fun addElement(preset: NavTagPreset) {
         if (!list.any { it.name == preset.name }) {
             list.add(preset)
-            Communication.applyMode(preset.mode)
+            Communication.applyMode(list[0].mode)
             this.setChanged()
             this.notifyObservers(list)
         }
