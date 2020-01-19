@@ -22,5 +22,9 @@
         <item>Freedom</item>
         <item>Rainbow</item>
     </string-array>
+    <string-array name="speed_choice">
+        <item>km</item>
+        <item>min</item>
+    </string-array>
     <string name="title_activity_destination">Map</string>
 </resources>

@@ -7,6 +7,8 @@ import com.glados.navtag.R
 import com.glados.navtag.core.RunningList
 import com.glados.navtag.core.RunningPreset
 import kotlinx.android.synthetic.main.activity_running.*
+import kotlinx.android.synthetic.main.activity_running.name
+import kotlinx.android.synthetic.main.activity_running.saveButton
 
 class RunningActivity : AppCompatActivity() {
 
@@ -19,7 +21,14 @@ class RunningActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         saveButton.setOnClickListener {
-            if (name.text.toString().isNotEmpty()) {
+            if (name.text.toString().isEmpty()) {
+                name.error = "Preset name can't be empty"
+            } else if(distance.text.toString().isEmpty()){
+                distance.error = "Preset distance can't be empty"
+            } else if(speed.text.toString().isEmpty()){
+                speed.error = "Preset speed can't be empty"
+            }
+            else {
                 RunningList.addElement(
                     RunningPreset(
                         name.text.toString(),
@@ -27,19 +36,18 @@ class RunningActivity : AppCompatActivity() {
                     )
                 )
                 super.onBackPressed()
-            } else {
-                name.error = "Preset name can't be empty"
             }
         }
         ArrayAdapter.createFromResource(
             this,
-            R.array.spinnerstuff,
+            R.array.speed_choice,
             android.R.layout.simple_spinner_item
         ).also { adapter ->
             // Specify the layout to use when the list of choices appears
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             // Apply the adapter to the spinner
-            spinner.adapter = adapter
+            km.adapter = adapter
         }
+
     }
 }
