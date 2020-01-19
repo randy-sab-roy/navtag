@@ -15,7 +15,7 @@
         android:id="@+id/nav_gallery"
         android:name="com.glados.navtag.ui.safetylight.SafetyLightFragment"
         android:label="@string/menu_safety_light"
-        tools:layout="@layout/fragment_safety_light" />
+        tools:layout="@layout/fragment_widget" />
 
     <fragment
         android:id="@+id/nav_slideshow"
@@ -37,7 +37,7 @@
 
     <fragment
         android:id="@+id/nav_send"
-        android:name="com.glados.navtag.ui.send.SendFragment"
-        android:label="@string/menu_send"
-        tools:layout="@layout/fragment_send" />
+        android:name="com.glados.navtag.ui.destination.DestinationFragment"
+        android:label="@string/menu_destination"
+        tools:layout="@layout/fragment_widget" />
 </navigation>

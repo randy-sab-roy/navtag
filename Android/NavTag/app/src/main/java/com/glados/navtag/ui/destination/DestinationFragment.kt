@@ -1,4 +1,4 @@
-package com.glados.navtag.ui.safetylight
+package com.glados.navtag.ui.destination
 
 import android.content.Intent
 import android.os.Bundle
@@ -9,11 +9,11 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.glados.navtag.R
-import com.glados.navtag.core.SafetyLight
+import com.glados.navtag.core.DestinationList
 import kotlinx.android.synthetic.main.fragment_widget.*
 import java.util.Observer
 
-class SafetyLightFragment : Fragment() {
+class DestinationFragment : Fragment() {
 
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
 
@@ -35,22 +35,22 @@ class SafetyLightFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         presetRecyclerView.layoutManager = LinearLayoutManager(context)
-        viewAdapter = SafetyLightAdapter(SafetyLight.getValue())
+        viewAdapter = DestinationAdapter(DestinationList.getValue())
         presetRecyclerView.adapter = viewAdapter
     }
 
     override fun onStart() {
         instructions.text = "To add a preset, press the button below"
         fab.setOnClickListener {
-            startActivity(Intent(context, SafetyLightActivity::class.java))
+            startActivity(Intent(context, DestinationActivity::class.java))
         }
-        SafetyLight.addObserver(safetyLightObserver)
-        SafetyLight.reload()
+        DestinationList.addObserver(safetyLightObserver)
+        DestinationList.reload()
         super.onStart()
     }
 
     override fun onStop() {
-        SafetyLight.deleteObserver(safetyLightObserver)
+        DestinationList.deleteObserver(safetyLightObserver)
         super.onStop()
     }
 }

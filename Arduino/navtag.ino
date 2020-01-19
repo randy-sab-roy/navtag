@@ -14,11 +14,16 @@
 
 Adafruit_NeoPixel pixels(NUM_LEDS, DATA_PIN, NEO_GRB | NEO_KHZ800);
 WiFiServer server(80);
+WiFiClient client;
+unsigned long lastUpdate = 0;
 
-const uint32_t GREEN = pixels.Color(0, 255, 0);
-const uint32_t RED = pixels.Color(255, 0, 0);
-const uint32_t BLUE = pixels.Color(0, 0, 255);
+uint32_t colors[NUM_LEDS];
+uint32_t freqs[NUM_LEDS];
+
 const uint32_t BLACK = pixels.Color(0, 0, 0);
+const uint32_t RED = pixels.Color(255, 0, 0);
+const uint32_t GREEN = pixels.Color(0, 255, 0);
+const uint32_t BLUE = pixels.Color(0, 0, 255);
 const uint32_t WHITE = pixels.Color(255, 255, 255);
 
 void lightAllLeds(uint32_t color)
@@ -71,6 +76,72 @@ void setupWifi()
     Serial.println(WiFi.localIP());
 }
 
+void serveClient(WiFiClient &client)
+{
+	// Wait for client
+	for (int i = 0; i < 1000 && !client.available(); i++)
+	{
+		delay(1);
+	}
+	if (!client.available())
+	{
+		return;
+	}
+
+	// Read client request
+	String req = client.readStringUntil('e');
+    int length = req.length();
+
+    // Set colors
+    for(int i = 0; (i < length) && (i < NUM_LEDS); i++)
+    {
+        switch(req[i])
+        {
+            case '0':
+                colors[i] = BLACK;
+                break;
+            case '1':
+                colors[i] = RED;
+                break;
+            case '2':
+                colors[i] = GREEN;
+                break;
+            case '3':
+                colors[i] = BLUE;
+                break;
+            case '4':
+                colors[i] = WHITE;
+                break;
+            default:
+                colors[i] = BLACK;
+                break;
+        }
+    }
+
+    // Set freqs
+    for(int i = 0; (i+NUM_LEDS < length) && (i < NUM_LEDS); i++)
+    {
+        int freq = req[i+NUM_LEDS] - '0';
+        if(freq >= 0 && freq <= 9)
+        {
+            freqs[i] = freq;
+        }
+    }
+
+    client.flush();
+    client.print("OK\n");
+}
+
+void updateColors()
+{
+    for(int i = 0; i < NUM_LEDS; i++)
+    {
+        pixels.setPixelColor(i, (freqs[i] > 0 && (millis() % (freqs[i] * 200) > ((freqs[i] * 200) / 2))) ? BLACK : colors[i]);
+    }
+    Serial.print("\n");
+    pixels.show();
+}
+
 void setup()
 {
     // Enable serial connection
@@ -87,30 +158,18 @@ void setup()
     server.begin();
 
     lightAllLeds(GREEN);
+    delay(500);
+    lightAllLeds(BLACK);
 }
 
 void loop()
 {
-    WiFiClient client = server.available();
-
-    if (client)
+    client = server.available();
+    if (client && client.connected())
     {
-        Serial.println("Client connected");
-        while (client.connected())
-        {
-            while (client.available() > 0)
-            {
-                String line = client.readStringUntil('e');
-                Serial.println(line);
-                client.flush();
-                client.print("Ok");
-                lightAllLeds(random(100) > 50 ? RED : BLUE);
-            }
-
-            delay(10);
-        }
-
+        serveClient(client);
         client.stop();
-        Serial.println("Client disconnected");
     }
+
+    updateColors();
 }

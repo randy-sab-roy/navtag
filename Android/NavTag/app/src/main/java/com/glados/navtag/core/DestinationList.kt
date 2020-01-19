@@ -2,14 +2,14 @@ package com.glados.navtag.core
 
 import java.util.*
 
-object SafetyLight : Observable(){
-    private var list: ArrayList<SafetyLightPreset> = ArrayList()
+object DestinationList : Observable(){
+    private var list: ArrayList<DestinationPreset> = ArrayList()
 
-    fun getValue(): ArrayList<SafetyLightPreset> {
+    fun getValue(): ArrayList<DestinationPreset> {
         return list
     }
 
-    fun setValue(newList: ArrayList<SafetyLightPreset>) {
+    fun setValue(newList: ArrayList<DestinationPreset>) {
         if (list != newList) {
             list.clear()
             for (element in newList) {
@@ -20,7 +20,7 @@ object SafetyLight : Observable(){
         }
     }
 
-    fun addElement(preset: SafetyLightPreset){
+    fun addElement(preset: DestinationPreset){
         if (!list.any { it.name == preset.name }) {
             list.add(preset)
             this.setChanged()
@@ -28,7 +28,7 @@ object SafetyLight : Observable(){
         }
     }
 
-    fun removeElement(preset: SafetyLightPreset){
+    fun removeElement(preset: DestinationPreset){
         list.remove(preset)
         this.setChanged()
         this.notifyObservers(list)

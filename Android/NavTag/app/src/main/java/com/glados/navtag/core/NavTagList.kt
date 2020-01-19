@@ -1,15 +1,17 @@
 package com.glados.navtag.core
 
+import android.util.Log
+import android.widget.Toast
 import java.util.*
 
-object SafetyLight : Observable(){
-    private var list: ArrayList<SafetyLightPreset> = ArrayList()
+object NavTagList : Observable() {
+    private var list: ArrayList<NavTagPreset> = ArrayList()
 
-    fun getValue(): ArrayList<SafetyLightPreset> {
+    fun getValue(): ArrayList<NavTagPreset> {
         return list
     }
 
-    fun setValue(newList: ArrayList<SafetyLightPreset>) {
+    fun setValue(newList: ArrayList<NavTagPreset>) {
         if (list != newList) {
             list.clear()
             for (element in newList) {
@@ -20,7 +22,7 @@ object SafetyLight : Observable(){
         }
     }
 
-    fun addElement(preset: SafetyLightPreset){
+    fun addElement(preset: NavTagPreset) {
         if (!list.any { it.name == preset.name }) {
             list.add(preset)
             this.setChanged()
@@ -28,18 +30,18 @@ object SafetyLight : Observable(){
         }
     }
 
-    fun removeElement(preset: SafetyLightPreset){
+    fun removeElement(preset: NavTagPreset) {
         list.remove(preset)
         this.setChanged()
         this.notifyObservers(list)
     }
 
-    fun reload(){
+    fun reload() {
         this.setChanged()
         this.notifyObservers(list)
     }
 
-    fun reset(){
+    fun reset() {
         list.clear()
     }
 }
