@@ -19,8 +19,8 @@
 
     <fragment
         android:id="@+id/nav_slideshow"
-        android:name="com.glados.navtag.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
+        android:name="com.glados.navtag.ui.running.RunningFragment"
+        android:label="@string/menu_running"
         tools:layout="@layout/fragment_slideshow" />
 
     <fragment
@@ -31,8 +31,8 @@
 
     <fragment
         android:id="@+id/nav_share"
-        android:name="com.glados.navtag.ui.share.ShareFragment"
-        android:label="@string/menu_share"
+        android:name="com.glados.navtag.ui.commute.CommuteFragment"
+        android:label="@string/menu_commute"
         tools:layout="@layout/fragment_share" />
 
     <fragment
