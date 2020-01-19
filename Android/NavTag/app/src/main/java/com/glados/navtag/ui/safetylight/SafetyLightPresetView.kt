@@ -5,10 +5,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.glados.navtag.R
-import com.glados.navtag.core.NavTagList
-import com.glados.navtag.core.NavTagPreset
-import com.glados.navtag.core.SafetyLight
-import com.glados.navtag.core.SafetyLightPreset
+import com.glados.navtag.core.*
 import kotlinx.android.synthetic.main.item_preset.view.*
 
 
@@ -23,7 +20,7 @@ class SafetyLightPresetView @JvmOverloads constructor(context: Context, attrs: A
             SafetyLight.removeElement(preset)
         }
         uploadButton.setOnClickListener {
-            NavTagList.addElement(NavTagPreset(preset.name))
+            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.SafetyLight))
         }
     }
 

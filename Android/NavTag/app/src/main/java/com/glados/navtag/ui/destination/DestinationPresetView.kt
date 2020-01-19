@@ -7,10 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.glados.navtag.R
-import com.glados.navtag.core.DestinationList
-import com.glados.navtag.core.DestinationPreset
-import com.glados.navtag.core.NavTagList
-import com.glados.navtag.core.NavTagPreset
+import com.glados.navtag.core.*
 import kotlinx.android.synthetic.main.item_preset.view.*
 
 class DestinationPresetView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
@@ -24,7 +21,7 @@ class DestinationPresetView @JvmOverloads constructor(context: Context, attrs: A
             DestinationList.removeElement(preset)
         }
         uploadButton.setOnClickListener {
-            NavTagList.addElement(NavTagPreset(preset.name))
+            NavTagList.addElement(NavTagPreset(preset.name, NavTagMode.Destination))
         }
     }
 

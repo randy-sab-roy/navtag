@@ -33,7 +33,10 @@ object NavTagList : Observable() {
 
     fun removeElement(preset: NavTagPreset) {
         list.remove(preset)
-        Communication.applyMode(list[0].mode)
+        if (list.isEmpty())
+            Communication.applyMode(NavTagMode.Off)
+        else
+            Communication.applyMode(list[0].mode)
         this.setChanged()
         this.notifyObservers(list)
     }
