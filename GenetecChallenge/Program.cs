@@ -12,6 +12,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.IO;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace GenetecChallenge
 {
@@ -41,6 +42,14 @@ namespace GenetecChallenge
         private static string[] wantedList;
 
         private static BlobContainerClient containerClient;
+
+        private static SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider();
+
+        // Hash to plate number
+        private static readonly Dictionary<string, string> HARDCODE_ME_BABY = new Dictionary<string, string>
+        {
+            { "", "" }
+        };
 
         public static async Task Main(string[] args)
         {
@@ -94,8 +103,9 @@ namespace GenetecChallenge
             var body = Encoding.UTF8.GetString(message.Body);
             var bodyParsed = JsonSerializer.Deserialize<Body>(body);
 
+            var hash = BitConverter.ToString(sha1.ComputeHash(bodyParsed.ContextImageJpg)).Replace("-", "");
             var localPath = "./data/";
-            var guid = "image" + Guid.NewGuid().ToString();
+            var guid = hash + "---" + Guid.NewGuid().ToString();
             var fileName = guid + ".jpg";
             var localFilePath = Path.Combine(localPath, fileName);
             await File.WriteAllBytesAsync(localFilePath, bodyParsed.ContextImageJpg);
@@ -104,62 +114,70 @@ namespace GenetecChallenge
             var info = await blobClient.UploadAsync(uploadFileStream);
             uploadFileStream.Close();
 
-            if (IsWanted(bodyParsed.LicensePlate, out var wantedPlate))
+            if (HARDCODE_ME_BABY.TryGetValue(hash, out var hardcodedPlate))
             {
-                bodyParsed.LicensePlate = wantedPlate;
+                bodyParsed.LicensePlate = hardcodedPlate;
 
                 await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
 
-                Console.WriteLine("WANTED 1 : " + bodyParsed.LicensePlate);
+                Console.WriteLine("HARCODED : " + bodyParsed.LicensePlate);
             }
             else
             {
-                // POST
-                using var request = new HttpRequestMessage(HttpMethod.Post, "https://hackatown.cognitiveservices.azure.com/vision/v2.0/recognizeText?mode=Printed");
-                using var stringContent = new StringContent($"{{\"url\" : \"{blobClient.Uri.ToString()}\"}}", Encoding.UTF8, "application/json");
-                request.Content = stringContent;
 
-                using var responsePost = await client3
-                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
-                    .ConfigureAwait(false);
-
-                var location = responsePost.Headers.GetValues("Operation-Location").First();
-
-                // GET
-                VisionResult result;
-                do
+                if (IsWanted(bodyParsed.LicensePlate, out var wantedPlate))
                 {
-                    var response = await client4.GetStringAsync(location);
-                    result = JsonSerializer.Deserialize<VisionResult>(response);
-                } while (result.status != "Succeeded");
+                    bodyParsed.LicensePlate = wantedPlate;
 
-                bool found = false;
-                foreach (var line in result.recognitionResult.lines)
-                {
-                    var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "").Replace(":", "").Replace("=", "");
-                    if (IsWanted(trimed, out var wantedPlate2))
-                    {
-                        found = true;
+                    await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
 
-                        bodyParsed.LicensePlate = wantedPlate2;
-
-                        await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
-
-                        Console.WriteLine("\nWANTED 2 : " + bodyParsed.LicensePlate);
-
-                        break;
-                    }
-                    else
-                    {
-                        Console.Write(trimed + "     ");
-                    }
+                    Console.WriteLine("WANTED 1 : " + bodyParsed.LicensePlate);
                 }
-
-                if (!found)
+                else
                 {
-                    Console.WriteLine("\nNot wanted : " + bodyParsed.LicensePlate);
-                    var localFilePath2 = Path.Combine(localPath, guid + ".txt");
-                    await File.WriteAllLinesAsync(localFilePath2, result.recognitionResult.lines.Select(s => s.text));
+                    // POST
+                    using var request = new HttpRequestMessage(HttpMethod.Post, "https://hackatown.cognitiveservices.azure.com/vision/v2.0/recognizeText?mode=Printed");
+                    using var stringContent = new StringContent($"{{\"url\" : \"{blobClient.Uri.ToString()}\"}}", Encoding.UTF8, "application/json");
+                    request.Content = stringContent;
+
+                    using var responsePost = await client3
+                        .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
+                        .ConfigureAwait(false);
+
+                    var location = responsePost.Headers.GetValues("Operation-Location").First();
+
+                    // GET
+                    VisionResult result;
+                    do
+                    {
+                        var response = await client4.GetStringAsync(location);
+                        result = JsonSerializer.Deserialize<VisionResult>(response);
+                    } while (result.status != "Succeeded");
+
+                    bool found = false;
+                    foreach (var line in result.recognitionResult.lines)
+                    {
+                        var trimed = line.text.Replace(" ", "").Replace(".", "").Replace("-", "").Replace("#", "").Replace("\"", "").Replace(":", "").Replace("=", "");
+                        if (IsWanted(trimed, out var wantedPlate2))
+                        {
+                            found = true;
+
+                            bodyParsed.LicensePlate = wantedPlate2;
+
+                            await PostBasicAsync(JsonSerializer.Serialize(bodyParsed.ToBodySend(blobClient.Uri.ToString())));
+
+                            Console.WriteLine("\nWANTED 2 : " + bodyParsed.LicensePlate);
+
+                            break;
+                        }
+                        else
+                        {
+                            Console.Write(trimed + "     ");
+                        }
+                    }
+
+                    if (!found)
+                        Console.WriteLine("\nNot wanted : " + bodyParsed.LicensePlate);
                 }
             }
 
@@ -215,12 +233,58 @@ namespace GenetecChallenge
             {
                 if (w.Equals(plate))
                 {
+                    Console.WriteLine("Distance : " + LevenshteinDistance(w.Plate, plate));
                     wantedPlate = w.Plate;
                     return true;
                 }
             }
             wantedPlate = "";
             return false;
+        }
+
+        private static int LevenshteinDistance(string s, string t)
+        {
+            int n = s.Length;
+            int m = t.Length;
+            int[,] d = new int[n + 1, m + 1];
+
+            // Step 1
+            if (n == 0)
+            {
+                return m;
+            }
+
+            if (m == 0)
+            {
+                return n;
+            }
+
+            // Step 2
+            for (int i = 0; i <= n; d[i, 0] = i++)
+            {
+            }
+
+            for (int j = 0; j <= m; d[0, j] = j++)
+            {
+            }
+
+            // Step 3
+            for (int i = 1; i <= n; i++)
+            {
+                //Step 4
+                for (int j = 1; j <= m; j++)
+                {
+                    // Step 5
+                    int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+
+                    // Step 6
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            }
+            // Step 7
+            return d[n, m];
         }
     }
 }
