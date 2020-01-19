@@ -149,7 +149,7 @@ class DestinationActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
-        addressField.setOnEditorActionListener { v, actionId, event ->
+        addressField.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                 actionId == EditorInfo.IME_ACTION_DONE) {
                 if (event == null || !event.isShiftPressed) {
@@ -157,7 +157,7 @@ class DestinationActivity : AppCompatActivity(), OnMapReadyCallback {
                     mMap.clear()
                     val latlng = getLocationFromAddress(addressField.text.toString())
                     if (latlng == null){
-                        addressField.error = "Address Field can't be empty"
+                        addressField.error = "Address returned no result"
                     } else {
                         mMap.addMarker(MarkerOptions().position(latlng).title(addressField.text.toString()))
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getLocationFromAddress(addressField.text.toString()), 16f))
